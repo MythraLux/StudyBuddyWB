@@ -1,6 +1,7 @@
 # StudyBuddyWB টেলিগ্রাম বট: সিম্পল ভার্সন
 
 # প্রথম অংশ: ইমপোর্ট এবং ডাটা
+import os  # এটা যোগ করা হয়েছে
 import sqlite3
 import json
 import random
@@ -771,4 +772,4 @@ def main():
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
-    main()    
+    main()
