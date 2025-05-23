@@ -1,4 +1,4 @@
-# StudyBuddyWB টেলিগ্রাম বট: সম্পূর্ণ কোড
+# StudyBuddyWB টেলিগ্রাম বট: সিম্পল ভার্সন
 
 # প্রথম অংশ: ইমপোর্ট এবং ডাটা
 import sqlite3
@@ -10,7 +10,6 @@ from typing import Dict, Optional
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from fuzzywuzzy import fuzz
-from transformers import pipeline
 import nest_asyncio
 nest_asyncio.apply()
 
@@ -52,7 +51,7 @@ def save_study_partner(user_id: int, class_level: str, board: str, subjects: str
     conn = sqlite3.connect('user_points.db')
     c = conn.cursor()
     c.execute("INSERT OR REPLACE INTO study_partners (user_id, class_level, board, subjects, study_time) VALUES (?, ?, ?, ?, ?)",
-              (user_id, class_level, board, subjects, study_time))
+              (user_id, class_level, board.strip(), subjects.strip(), study_time.strip()))
     conn.commit()
     conn.close()
 
@@ -203,9 +202,6 @@ dictionary = {
     "study": "পড়াশোনা",
 }
 
-# NLP ক্লাসিফায়ার
-classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
-
 # দ্বিতীয় অংশ: হেল্পার ফাংশন এবং কমান্ড হ্যান্ডলার
 def save_context(user_id: int, context_data: Dict):
     try:
@@ -266,12 +262,7 @@ def predict_intent(user_input: str) -> str:
             max_score = score
             matched_intent = item["intent"]
     if matched_intent == "unknown":
-        try:
-            scores = classifier(user_input, candidate_labels=[item["intent"] for item in intents_data], multi_label=False)
-            matched_intent = scores["labels"][0]
-        except Exception as e:
-            logger.error(f"Error in NLP prediction: {e}")
-            matched_intent = "casual_chat"
+        matched_intent = "casual_chat"
     return matched_intent
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -377,7 +368,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         rating_pattern = r'^\s*[1-5]\s*$'
         if re.match(rating_pattern, user_input):
             rating = int(user_input)
-            save_feedback(user_idವಿಷ್ಕারে save_feedback(user_id, rating, "")
+            save_feedback(user_id, rating, "")
             context_data["awaiting_feedback"] = False
             save_context(user_id, context_data)
             await update.message.reply_text(
@@ -768,8 +759,7 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 def main():
-    
-    application = Application.builder().token(TOKEN).build()
+    application = Application.builder().token(os.getenv("TOKEN")).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help))
     application.add_handler(CommandHandler("about", about))
@@ -781,5 +771,4 @@ def main():
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == '__main__':
-    main()
-  
+    main()    
